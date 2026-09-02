@@ -4,7 +4,8 @@
   "deno.enable": true,
   "deno.disablePaths": [
     "./scratchenv",
-    "./example"
+    "./example",
+    "./cov_profile"
   ],
   "editor.rulers": [
     100

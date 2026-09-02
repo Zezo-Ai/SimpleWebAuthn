@@ -1,6 +1,6 @@
 import { type COSEALG, COSEKEYS, type COSEPublicKeyRSA, isCOSEAlg } from '../../cose.ts';
-import { mapCoseAlgToWebCryptoAlg } from './mapCoseAlgToWebCryptoAlg.ts';
-import { importKey } from './importKey.ts';
+import { mapCoseAlgToWebCryptoHashAlgName } from './mapCoseAlgToWebCryptoHashAlgName.ts';
+import { importJWKKey } from './importJWKKey.ts';
 import { isoBase64URL } from '../index.ts';
 import { mapCoseAlgToWebCryptoKeyAlgName } from './mapCoseAlgToWebCryptoKeyAlgName.ts';
 import { getWebCrypto } from './getWebCrypto.ts';
@@ -49,7 +49,7 @@ export async function verifyRSA(opts: {
 
   const keyAlgorithm = {
     name: mapCoseAlgToWebCryptoKeyAlgName(alg),
-    hash: { name: mapCoseAlgToWebCryptoAlg(alg) },
+    hash: { name: mapCoseAlgToWebCryptoHashAlgName(alg) },
   };
 
   const verifyAlgorithm: AlgorithmIdentifier | RsaPssParams = {
@@ -57,7 +57,7 @@ export async function verifyRSA(opts: {
   };
 
   if (shaHashOverride) {
-    keyAlgorithm.hash.name = mapCoseAlgToWebCryptoAlg(shaHashOverride);
+    keyAlgorithm.hash.name = mapCoseAlgToWebCryptoHashAlgName(shaHashOverride);
   }
 
   if (keyAlgorithm.name === 'RSASSA-PKCS1-v1_5') {
@@ -99,10 +99,7 @@ export async function verifyRSA(opts: {
     );
   }
 
-  const key = await importKey({
-    keyData,
-    algorithm: keyAlgorithm,
-  });
+  const key = await importJWKKey({ keyData, algorithm: keyAlgorithm });
 
   return WebCrypto.subtle.verify(verifyAlgorithm, key, signature, data);
 }

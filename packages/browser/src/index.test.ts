@@ -34,3 +34,15 @@ Deno.test('should export method `bufferToBase64URLString`', () => {
 Deno.test('should export singleton `WebAuthnAbortService`', () => {
   assert(index.WebAuthnAbortService);
 });
+
+Deno.test('should export method `getBrowserCapabilities`', () => {
+  assert(index.getBrowserCapabilities);
+});
+
+Deno.test('should export method `browserSupportsPasskeys`', () => {
+  assert(index.browserSupportsPasskeys);
+});
+
+Deno.test('should export method `sendSignal`', () => {
+  assert(index.sendSignal);
+});

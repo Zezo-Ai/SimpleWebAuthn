@@ -1,5 +1,6 @@
 import type {
-  AuthenticatorTransportFuture,
+  CredentialCreationOptions,
+  PublicKeyCredentialCreationOptions,
   PublicKeyCredentialCreationOptionsJSON,
   RegistrationCredential,
   RegistrationResponseJSON,
@@ -76,7 +77,10 @@ export async function startRegistration(
   // Wait for the user to complete attestation
   let credential;
   try {
-    credential = (await navigator.credentials.create(createOptions)) as RegistrationCredential;
+    credential = (await navigator.credentials.create(
+      // TODO: Newer versions of Deno require this casting, revisit once we're using Deno 2.6+
+      createOptions as globalThis.CredentialCreationOptions,
+    )) as RegistrationCredential;
   } catch (err) {
     throw identifyRegistrationError({ error: err as Error, options: createOptions });
   }
@@ -88,7 +92,7 @@ export async function startRegistration(
   const { id, rawId, response, type } = credential;
 
   // Continue to play it safe with `getTransports()` for now, even when L3 types say it's required
-  let transports: AuthenticatorTransportFuture[] | undefined = undefined;
+  let transports: string[] | undefined = undefined;
   if (typeof response.getTransports === 'function') {
     transports = response.getTransports();
   }

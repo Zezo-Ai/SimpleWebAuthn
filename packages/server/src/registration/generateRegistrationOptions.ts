@@ -1,47 +1,19 @@
 import type {
   AuthenticationExtensionsClientInputs,
   AuthenticatorSelectionCriteria,
-  AuthenticatorTransportFuture,
   Base64URLString,
-  COSEAlgorithmIdentifier,
   PublicKeyCredentialCreationOptionsJSON,
   PublicKeyCredentialHint,
   PublicKeyCredentialParameters,
   Uint8Array_,
 } from '../types/index.ts';
+import { SettingsService } from '../services/settingsService.ts';
 import { generateChallenge } from '../helpers/generateChallenge.ts';
 import { generateUserID } from '../helpers/generateUserID.ts';
 import { isoBase64URL, isoUint8Array } from '../helpers/iso/index.ts';
+import { COSEALG } from '../helpers/cose.ts';
 
 export type GenerateRegistrationOptionsOpts = Parameters<typeof generateRegistrationOptions>[0];
-
-/**
- * Supported crypto algo identifiers
- * See https://w3c.github.io/webauthn/#sctn-alg-identifier
- * and https://www.iana.org/assignments/cose/cose.xhtml#algorithms
- */
-export const supportedCOSEAlgorithmIdentifiers: COSEAlgorithmIdentifier[] = [
-  // EdDSA (In first position to encourage authenticators to use this over ES256)
-  -8,
-  // ECDSA w/ SHA-256
-  -7,
-  // ECDSA w/ SHA-512
-  -36,
-  // RSASSA-PSS w/ SHA-256
-  -37,
-  // RSASSA-PSS w/ SHA-384
-  -38,
-  // RSASSA-PSS w/ SHA-512
-  -39,
-  // RSASSA-PKCS1-v1_5 w/ SHA-256
-  -257,
-  // RSASSA-PKCS1-v1_5 w/ SHA-384
-  -258,
-  // RSASSA-PKCS1-v1_5 w/ SHA-512
-  -259,
-  // RSASSA-PKCS1-v1_5 w/ SHA-1 (Deprecated; here for legacy support)
-  -65535,
-];
 
 /**
  * Set up some default authenticator selection options as per the latest spec:
@@ -61,7 +33,15 @@ const defaultAuthenticatorSelection: AuthenticatorSelectionCriteria = {
  *   - https://www.iana.org/assignments/cose/cose.xhtml#algorithms
  *   - https://w3c.github.io/webauthn/#dom-publickeycredentialcreationoptions-pubkeycredparams
  */
-const defaultSupportedAlgorithmIDs: COSEAlgorithmIdentifier[] = [-8, -7, -257];
+export let defaultSupportedAlgorithmIDs: COSEALG[] = [
+  COSEALG.EdDSA,
+  COSEALG.ES256,
+  COSEALG.RS256,
+];
+
+if (SettingsService.runtimeSupportsPQC()) {
+  defaultSupportedAlgorithmIDs = [COSEALG.ML_DSA_44, ...defaultSupportedAlgorithmIDs];
+}
 
 /**
  * Prepare a value to pass into navigator.credentials.create(...) for authenticator registration
@@ -79,7 +59,7 @@ const defaultSupportedAlgorithmIDs: COSEAlgorithmIdentifier[] = [-8, -7, -257];
  * @param excludeCredentials **(Optional)** - Authenticators registered by the user so the user can't register the same credential multiple times. Defaults to `[]`
  * @param authenticatorSelection **(Optional)** - Advanced criteria for restricting the types of authenticators that may be used. Defaults to `{ residentKey: 'preferred', userVerification: 'preferred' }`
  * @param extensions **(Optional)** - Additional plugins the authenticator or browser should use during attestation
- * @param supportedAlgorithmIDs **(Optional)** - Array of numeric COSE algorithm identifiers supported for attestation by this RP. See https://www.iana.org/assignments/cose/cose.xhtml#algorithms. Defaults to `[-8, -7, -257]`
+ * @param supportedAlgorithmIDs **(Optional)** - Array of numeric COSE algorithm identifiers indicating supported public key algorithms. Import `COSEALG` from \@simplewebauthn/server/helpers for suitable values. Defaults to `[COSEALG.EdDSA, COSEALG.ES256, COSEALG.RS256]`
  * @param preferredAuthenticatorType **(Optional)** - Encourage the browser to prompt the user to register a specific type of authenticator
  */
 export async function generateRegistrationOptions(
@@ -94,11 +74,11 @@ export async function generateRegistrationOptions(
     attestationType?: 'direct' | 'enterprise' | 'none';
     excludeCredentials?: {
       id: Base64URLString;
-      transports?: AuthenticatorTransportFuture[];
+      transports?: string[];
     }[];
     authenticatorSelection?: AuthenticatorSelectionCriteria;
     extensions?: AuthenticationExtensionsClientInputs;
-    supportedAlgorithmIDs?: COSEAlgorithmIdentifier[];
+    supportedAlgorithmIDs?: number[];
     preferredAuthenticatorType?: 'securityKey' | 'localDevice' | 'remoteDevice';
   },
 ): Promise<PublicKeyCredentialCreationOptionsJSON> {
