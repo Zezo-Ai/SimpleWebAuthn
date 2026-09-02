@@ -1,5 +1,74 @@
 # Changelog
 
+## v14.0.0 - The one after they go quantum
+
+The headlining feature of this release is **@simplewebauthn/server** gaining support for passkeys
+using the ML-DSA-44, ML-DSA-65, and ML-DSA-87 PQC algorithms in supported runtimes. And in those
+same supported runtimes, SimpleWebAuthn will automatically encourage registration of ML-DSA-44
+passkeys to future-proof Relying Parties as PQC-capable FIDO2 authenticators and credential managers
+start coming to market. See https://simplewebauthn.dev/docs/advanced/server/pqc-ml-dsa-support for
+more info 🚀
+
+Setting our sites on the browser, **@simplewebauthn/browser** picks up a new `sendSignal()` method
+as a single method to call all of the
+[WebAuthn Signal APIs](https://w3c.github.io/webauthn/#sctn-signal-methods). See
+https://simplewebauthn.dev/docs/packages/browser#sendsignal for more info 🛜
+
+As for breaking changes, the minimum supported version of Node has been raised to **Node LTS 22.x
+and higher**, and **Deno v2.4.x and higher**. Going forward, SimpleWebAuthn will more formally aim
+to support Node LTS releases through their Active and Maintenance windows as tracked on
+[the Node.js Releases page](https://nodejs.org/en/about/previous-releases), and aim to support Deno
+minor releases for up to one year after their release
+
+That's not all, though. Continue reading for the full list of changes in this release! 🎉
+
+**Changes:**
+
+- **[server]** The PQC ML-DSA-44, ML-DSA-65, and ML-DSA-87 signature algorithms are now supported as
+  passkey public key algorithms when the runtime supports them. In runtimes that support these PQC
+  algorithms, `generateRegistrationOptions()` will include ML-DSA-44 as the most preferred public
+  key algorithm during registration. See
+  https://simplewebauthn.dev/docs/advanced/server/pqc-ml-dsa-support for more info
+  ([#785](https://github.com/MasterKale/SimpleWebAuthn/pull/785),
+  [#794](https://github.com/MasterKale/SimpleWebAuthn/pull/794))
+- **[browser]** The new `sendSignal()` method offers a simple way to invoke the
+  [WebAuthn Signal APIs](https://w3c.github.io/webauthn/#sctn-signal-methods). See
+  https://simplewebauthn.dev/docs/packages/browser#sendsignal for more info
+  ([#778](https://github.com/MasterKale/SimpleWebAuthn/pull/778))
+- **[browser]** The new `browserSupportsPasskeys()` helper method performs more robust WebAuthn
+  support detection by also checking for typical passkey-related WebAuthn features. See
+  https://simplewebauthn.dev/docs/packages/browser#browsersupportspasskeys for more info
+  ([#761](https://github.com/MasterKale/SimpleWebAuthn/pull/761))
+- **[browser]** The new `getBrowserCapabilities()` helper method wraps WebAuthn's
+  `getClientCapabilities()` with additional feature detection checks when possible. See
+  https://simplewebauthn.dev/docs/packages/browser#getbrowsercapabilities for more info
+  ([#761](https://github.com/MasterKale/SimpleWebAuthn/pull/761))
+- **[server]** `verifyAuthenticationResponse()` accepts an optional new `expectedTopOrigin` argument
+  that supports cross-origin authentication verification. See
+  https://simplewebauthn.dev/docs/advanced/server/cross-origin-support for more info
+  ([#773](https://github.com/MasterKale/SimpleWebAuthn/pull/773))
+- **[server]** `MetadataService.initialize()` accepts an optional new `logger` argument that can be
+  used to capture MetadataService status output in a project-specific manner. See
+  https://simplewebauthn.dev/docs/advanced/server/metadata-service#logging for more info
+  ([#765](https://github.com/MasterKale/SimpleWebAuthn/pull/765))
+- **[server]** The typing of `transports` in `excludeCredentials` when calling
+  `generateRegistrationOptions()`, and `allowCredentials` when calling
+  `generateAuthenticationOptions()`, has been updated to `string[]` to make it easier to call these
+  methods ([#776](https://github.com/MasterKale/SimpleWebAuthn/pull/776))
+- **[server]** `"tpm"` attestation verification is now more tolerant of variable casing in the TPM
+  manufacturer IDs ([#772](https://github.com/MasterKale/SimpleWebAuthn/pull/772))
+- **[server]** `generateRegistrationOptions()` and `verifyRegistrationResponse()` now use the same
+  default list of allowed public key algorithms for `supportedAlgorithmIDs`
+  ([#791](https://github.com/MasterKale/SimpleWebAuthn/pull/791))
+- **[server]** The `validateCertificatePath()` helper now supports x5c arrays containing
+  cross-signed certificates ([#796](https://github.com/MasterKale/SimpleWebAuthn/pull/796))
+
+### Breaking Changes
+
+- **[browser] [server]** The minimum supported runtime versions have been increased to Node LTS 22.x
+  and higher, and Deno v2.4.x and higher
+  ([#763](https://github.com/MasterKale/SimpleWebAuthn/pull/763))
+
 ## v13.3.3
 
 **Changes:**
