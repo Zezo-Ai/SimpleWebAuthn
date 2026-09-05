@@ -1,6 +1,6 @@
 {
   "name": "@simplewebauthn/server",
-  "version": "14.0.0",
+  "version": "14.0.1",
   "exports": {
     ".": "./src/index.ts",
     "./helpers": "./src/helpers/index.ts"
