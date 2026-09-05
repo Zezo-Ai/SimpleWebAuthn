@@ -1,5 +1,12 @@
 # Changelog
 
+## v14.0.1
+
+**Changes:**
+
+- **[server]** Attestation statements using PQC algorithms can now be verified
+  ([#800](https://github.com/MasterKale/SimpleWebAuthn/pull/800))
+
 ## v14.0.0 - The one after they go quantum
 
 The headlining feature of this release is **@simplewebauthn/server** gaining support for passkeys
