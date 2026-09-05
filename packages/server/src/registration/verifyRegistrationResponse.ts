@@ -4,6 +4,7 @@ import type {
   Uint8Array_,
   WebAuthnCredential,
 } from '../types/index.ts';
+import { PQCNotSupportedError } from '../errors/index.ts';
 import {
   type AttestationFormat,
   type AttestationStatement,
@@ -14,7 +15,7 @@ import { decodeClientDataJSON } from '../helpers/decodeClientDataJSON.ts';
 import { parseAuthenticatorData } from '../helpers/parseAuthenticatorData.ts';
 import { toHash } from '../helpers/toHash.ts';
 import { decodeCredentialPublicKey } from '../helpers/decodeCredentialPublicKey.ts';
-import { COSEKEYS } from '../helpers/cose.ts';
+import { COSEKEYS, isPQCCOSEAlg } from '../helpers/cose.ts';
 import { convertAAGUIDToString } from '../helpers/convertAAGUIDToString.ts';
 import { parseBackupFlags } from '../helpers/parseBackupFlags.ts';
 import { matchExpectedRPID } from '../helpers/matchExpectedRPID.ts';
@@ -219,26 +220,35 @@ export async function verifyRegistrationResponse(
   }
 
   const decodedPublicKey = decodeCredentialPublicKey(credentialPublicKey);
-  const alg = decodedPublicKey.get(COSEKEYS.alg);
+  const pubKeyAlg = decodedPublicKey.get(COSEKEYS.alg);
 
-  if (typeof alg !== 'number') {
+  if (typeof pubKeyAlg !== 'number') {
     throw new Error('Credential public key was missing numeric alg');
   }
 
   // Make sure the key algorithm is one we specified within the registration options
-  if (!supportedAlgorithmIDs.includes(alg as number)) {
+  if (!supportedAlgorithmIDs.includes(pubKeyAlg as number)) {
     const supported = supportedAlgorithmIDs.join(', ');
     throw new Error(
-      `Unexpected public key alg "${alg}", expected one of "${supported}"`,
+      `Unexpected public key alg "${pubKeyAlg}", expected one of "${supported}"`,
     );
   }
 
-  const clientDataHash = await toHash(
-    isoBase64URL.toBuffer(attestationResponse.clientDataJSON),
-  );
-  const rootCertificates = SettingsService.getRootCertificates({
-    identifier: fmt,
-  });
+  /**
+   * If the runtime doesn't support PQC passkeys then terminate here at the first sign of a PQC
+   * algorithm so that downstream issues that arise due to lack of PQC support won't get masked as
+   * unexpected behavior.
+   *
+   * I'm choosing to raise here even if attestation is "none" because it feels weird to allow an RP
+   * to parse a registration response w/o attestation only to encounter failure when trying to auth
+   * with the PQC passkey and the runtime doesn't support PQC.
+   */
+  if (isPQCCOSEAlg(pubKeyAlg) && !SettingsService.runtimeSupportsPQC()) {
+    throw new PQCNotSupportedError(pubKeyAlg);
+  }
+
+  const clientDataHash = await toHash(isoBase64URL.toBuffer(attestationResponse.clientDataJSON));
+  const rootCertificates = SettingsService.getRootCertificates({ identifier: fmt });
 
   // Prepare arguments to pass to the relevant verification method
   const verifierOpts: AttestationFormatVerifierOpts = {
